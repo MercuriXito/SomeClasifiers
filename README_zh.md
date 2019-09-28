@@ -27,3 +27,4 @@
 | -- | -- | -- | -- | -- |
 | `DeeperNetClassifier` | Kuzushiji49 | 95.162632% | 90.803942% | default |
 | `DeeperNetClassifier` | KMNIST | 97.905585% | 98.323333% | default | 
+| `DeeperNetClassifier` | CIFAR10 | 74.104299% | 80.310301% | default |
