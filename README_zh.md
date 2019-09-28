@@ -26,3 +26,4 @@
 | 模型 | 数据集 | 验证集最好表现 | 测试集表现 | 参数设置 |
 | -- | -- | -- | -- | -- |
 | `DeeperNetClassifier` | Kuzushiji49 | 95.162632% | 90.803942% | default |
+| `DeeperNetClassifier` | KMNIST | 97.905585% | 98.323333% | default | 

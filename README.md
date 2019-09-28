@@ -26,3 +26,4 @@ If not specified, all the network are trained with default parameters like **lea
 | models | dataset | best behave on validation set | behave on test set | settings |
 | -- | -- | -- | -- | -- |
 | `DeeperNetClassifier` | Kuzushiji49 | 95.162632% | 90.803942% | default |
+| `DeeperNetClassifier` | KMNIST | 97.905585% | 98.323333% | default | 
