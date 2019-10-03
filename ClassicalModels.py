@@ -4,7 +4,11 @@
     @file:			ClassicalModels.py
     @autor:			Victor Chen
     @description:
-        reimplement of classical state-of-art models with pytorch         
+        reimplement of classical state-of-art models with pytorch.
+        Since all the models implemented below are originally trained on ImageNet,
+        most of them take input image with size '3*224*224'. While trained with 
+        images with different size, more modification on model will be specified 
+        during training. 
 """
 
 import torch 
@@ -87,7 +91,7 @@ class GoogLeNet(nn.Module):
             Inception(832, [256, [160, 320], [32, 128], 128]),
             Inception(832, [384, [192, 384], [48, 128], 128]),
         )   
-        self.pooling = nn.AvgPool2d(3, 1) 
+        self.pooling = nn.AvgPool2d(7, 1) 
         self.classifier = nn.Sequential(
             nn.Linear(1024, output_class),
             nn.Softmax(dim=1)
@@ -117,8 +121,12 @@ class vggblock(nn.Module):
     def __init__(self, in_channels, out_channels, num_conv):
         super(vggblock, self).__init__()
 
-        blocks = []
-        for i in range(num_conv):
+        blocks = [
+            nn.Conv2d(in_channels, out_channels, 3, 1,1),
+            nn.ReLU(inplace=True)
+        ]
+
+        for i in range(num_conv - 1):
             blocks.append(nn.Conv2d(out_channels, out_channels, 3, 1, 1))
             blocks.append(nn.ReLU(inplace=True))
 
@@ -134,7 +142,8 @@ class vgg11(nn.Module):
     """vgg11 model with arrangement of vggblock: '1-1-2-2-2'
     In VGG model, the size of pictures is changed by pooling layer (much different from AlexNet)
     """
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, out_class):
+        super(vgg11, self).__init__()
         self.features = nn.Sequential(
             vggblock(in_channels, 64, 1),
             vggblock(64, 128, 1),
@@ -149,7 +158,7 @@ class vgg11(nn.Module):
             nn.Linear(4096, 4096),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(4096, 1000),
+            nn.Linear(4096, out_class),
             nn.Softmax(dim=1)
         )
 
@@ -215,4 +224,9 @@ class NIN(nn.Module):
 
 if __name__ == "__main__":
     
-    pass
+    # use tool function in utils to test the structure of models
+    import utils as cutils
+
+    for model in [vgg11, NIN, GoogLeNet]:
+        net = model(3, 1000)
+        print("{} output: {}".format(net.__class__.__name__, net(torch.randn([3, 3, 224, 224])).size()))
