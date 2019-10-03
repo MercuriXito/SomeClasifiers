@@ -29,7 +29,8 @@ class ClassfierTrainer(object):
         self.epochs = epochs
         pass 
 
-    def train(self, classifier, trainloader, valloader, device = None):
+    def train(self, classifier, trainloader, valloader, device = None, \
+        optimizer = None, criterion = None, lr_scheduler = None):
         """ Train classifier on trainloader and validate it on valloader. Then 
         select the best model and save it.
         """
@@ -52,8 +53,12 @@ class ClassfierTrainer(object):
         classifier.to(device)
 
         # methods
-        criterion = nn.CrossEntropyLoss()
-        optimizor = optim.Adam(classifier.parameters(), self.lr)
+        if criterion is None:
+            criterion = nn.CrossEntropyLoss()
+        if optimizer is None:
+            optimizer = optim.Adam(classifier.parameters(), self.lr)
+        if lr_scheduler is None:
+            lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 2, 0.3)
 
         for epoch in range(self.epochs):
 
@@ -71,9 +76,9 @@ class ClassfierTrainer(object):
                 predicted = classifier(images)
                 loss = criterion(predicted, labels)
                 # bp
-                optimizor.zero_grad()
+                optimizer.zero_grad()
                 loss.backward()
-                optimizor.step()
+                optimizer.step()
 
                 if i % interval == 0:
                     print("Iteration %7d: [ loss: %.12f ]" %(i + 1, loss.item()))
@@ -95,6 +100,8 @@ class ClassfierTrainer(object):
             if accuracy > best_val_accuracy:
                 best_val_accuracy = accuracy
                 best_state_dict = deepcopy(classifier.state_dict())
+
+            lr_scheduler.step()
 
         # save the best model
         torch.save(best_state_dict, models_root + classifier.__class__.__name__ + ".pth")
