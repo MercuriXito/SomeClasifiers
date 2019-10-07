@@ -30,7 +30,7 @@ class ClassfierTrainer(object):
         pass 
 
     def train(self, classifier, trainloader, valloader, device = None, \
-        optimizer = None, criterion = None, lr_scheduler = None):
+        optimizer = None, criterion = None, lr_scheduler = None, lr_scheduler_params = None):
         """ Train classifier on trainloader and validate it on valloader. Then 
         select the best model and save it.
         """
@@ -58,15 +58,19 @@ class ClassfierTrainer(object):
         if optimizer is None:
             optimizer = optim.Adam(classifier.parameters(), self.lr)
         if lr_scheduler is None:
-            lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 2, 0.3)
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, "min", patience=2)
+        else:
+            assert(lr_scheduler_params is not None)
+            scheduler = lr_scheduler(optimizer = optimizer, **lr_scheduler_params)
+            
 
-        for epoch in range(self.epochs):
+        for epoch in range(self.epochs): 
 
             print("Epoch:{}/{}".format(epoch+1, self.epochs))
             correct_sum = 0
             total_sum = 0
 
-            losses = []
+            avgloss = 0.0
             # train
             classifier.train()
             for i, data in enumerate(trainloader):
@@ -80,10 +84,11 @@ class ClassfierTrainer(object):
                 loss.backward()
                 optimizer.step()
 
+                avgloss += loss.item()
                 if i % interval == 0:
-                    print("Iteration %7d: [ loss: %.12f ]" %(i + 1, loss.item()))
-                    losses.append(loss.item())
+                    print("Iteration %7d: [ loss: %.12f ]" %(i + 1, avgloss / (i + 1)))
 
+            avgloss = avgloss / (i + 1)
             classifier.eval()
             for data in valloader:
                 images, labels = data
@@ -101,7 +106,10 @@ class ClassfierTrainer(object):
                 best_val_accuracy = accuracy
                 best_state_dict = deepcopy(classifier.state_dict())
 
-            lr_scheduler.step()
+            if isinstance(scheduler, optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(avgloss)
+            else:
+                scheduler.step()
 
         # save the best model
         torch.save(best_state_dict, models_root + classifier.__class__.__name__ + ".pth")
