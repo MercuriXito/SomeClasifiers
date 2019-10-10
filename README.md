@@ -23,8 +23,10 @@ All the dataset (`torch.utils.data.Dataset`) of dataset would be specified in di
 
 If not specified, all the network are trained with default parameters like **learning rate = 10e-3** and we train for **20 epochs**, other parameters like `optimizer` or `criterion` are also avaliable in Module `ClassifierTranier`.
 
-| models | dataset | best behave on validation set | behave on test set | settings |
-| -- | -- | -- | -- | -- |
-| `DeeperNetClassifier` | Kuzushiji49 | 95.162632% | 90.803942% | default |
-| `DeeperNetClassifier` | KMNIST | 97.905585% | 98.323333% | default | 
-| `DeeperNetClassifier` | CIFAR10 | 74.104299% | 80.310301% | default |
+| models | dataset | best behave on validation set | behave on test set | settings | preprocessing |
+| -- | -- | -- | -- | -- | -- |
+| `DeeperNetClassifier` | Kuzushiji49 | 95.162632% | 90.803942% | default | Data augmentation |
+| `DeeperNetClassifier` | KMNIST | 97.905585% | 98.323333% | default | Data augmentation |
+| `DeeperNetClassifier` | CIFAR10 | 74.104299% | 80.310301% | default | Data augmentation |
+| `DenseNet` | CIFAR10 | 79.905063% | 84.149217% | 50 epochs , PlateauReduce | Data augmentation |
+| `ResNet101` from torchvision | CIFAR10 | 86.226115% | 77.631158% | 50 epochs, PlateauReduce, | Resize96 Data augmentation |

@@ -21,10 +21,12 @@
 
 ## Work
 
-如果没有具体说明，我使用默认的参数训练网络(学习率`learning rate`=0.001)，而且我使用默认20个epochs训练，其他的参数(例如`optimizer`梯度下降方法，`criterion`loss计算函数)在`ClassifierTrainer`中可以看出。
+如果没有具体说明，我使用默认的参数训练网络(学习率`learning rate`=0.001)，而且我使用默认20个epochs训练，其他的参数(例如`optimizer`梯度下降方法，`criterion`loss计算函数，学习率的减少方法)在`ClassifierTrainer`中可以看出。
 
-| 模型 | 数据集 | 验证集最好表现 | 测试集表现 | 参数设置 |
-| -- | -- | -- | -- | -- |
-| `DeeperNetClassifier` | Kuzushiji49 | 95.162632% | 90.803942% | default |
-| `DeeperNetClassifier` | KMNIST | 97.905585% | 98.323333% | default | 
-| `DeeperNetClassifier` | CIFAR10 | 74.104299% | 80.310301% | default |
+| 模型 | 数据集 | 验证集最好表现 | 测试集表现 | 参数设置 | 预处理 |
+| -- | -- | -- | -- | -- | -- |
+| `DeeperNetClassifier` | Kuzushiji49 | 95.162632% | 90.803942% | default | Data augmentation |
+| `DeeperNetClassifier` | KMNIST | 97.905585% | 98.323333% | default | Data augmentation |
+| `DeeperNetClassifier` | CIFAR10 | 74.104299% | 80.310301% | default | Data augmentation |
+| `DenseNet` for CIFAR10 | CIFAR10 | 79.905063% | 84.149217% | 50 epochs , PlateauReduce | Data augmentation |
+| `ResNet101` from torchvision | CIFAR10 | 86.226115% | 77.631158% | 50 epochs, PlateauReduce, | Resize96 Data augmentation |
