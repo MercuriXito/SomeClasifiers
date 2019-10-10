@@ -504,6 +504,104 @@ class ResNetPreA(nn.Module):
 
 
 ########################################
+# DenseNet
+
+class DenseUnit(nn.Module):
+    """DenseUnit，使用BottleNeck结构，每个DenseUnit包含一个1*1和3*3的卷积层，
+    并且使用pre-activation
+    """
+    def __init__(self, in_channels, out_channels):
+        super(DenseUnit, self).__init__()
+        self.unit = nn.Sequential(
+            nn.BatchNorm2d(in_channels),
+            nn.ReLU(inplace=False),
+            nn.Conv2d(in_channels, out_channels, 1, 1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=False),
+            nn.Conv2d(out_channels, out_channels, 3, 1, 1)
+        )
+
+    def forward(self, x):
+        return self.unit(x)
+
+
+class DenseBlock(nn.Module):
+
+    def __init__(self, in_channels, L, grow_rate):
+        """DenseBlock，稠密块，in_channels表示输入通道，L表示稠密块包含的DenseUnit个数，
+        grow_rate表示每个DenseUnit输出的通道数
+        """
+        super(DenseBlock, self).__init__()
+
+        blocks = [DenseUnit(in_channels, grow_rate)]
+        for i in range(L - 1):
+            blocks.append(
+                DenseUnit(grow_rate, grow_rate),
+            )
+
+        self.blocks = nn.Sequential(*blocks)
+
+    def forward(self, x):
+        y = x
+        for block in self.blocks:
+            x = block(x)
+            y = torch.cat((y, x), dim = 1)
+
+        return y
+
+class TransitionBlock(nn.Module):
+    """TransitionBlock 过渡层，作用是将DenseBlock稠密层的输出的feature map回复到原有的水平(1*1 conv)
+    同时使高宽减半(pooling)
+    """
+    def __init__(self, in_channels, out_channels):
+        super(TransitionBlock, self).__init__()
+
+        self.block = nn.Sequential(
+            nn.BatchNorm2d(in_channels),
+            nn.ReLU(inplace=False),
+            nn.Conv2d(in_channels, out_channels, 1, 1),
+            nn.MaxPool2d(2, 2)
+        )
+
+    def forward(self, x):
+        return self.block(x)
+
+
+class DenseNet(nn.Module):
+    """使用在CIFAR数据集上的DenseNet，每个DenseBlock包含四个DenseUnit，每个DenseUnit输出32个通道。
+    """
+    def __init__(self, in_channels, out_class, num_dense_block = 3, median_channels = 64):
+        super(DenseNet, self).__init__()
+
+        features = [
+            nn.Conv2d(in_channels, 16, 3, 1, 1)
+        ]
+
+        num_convs_channels = 16
+        for i in range(num_dense_block):
+            features.append(
+                DenseBlock(num_convs_channels, 4, 32),
+            )
+            num_convs_channels += 4 * 32
+            if i != num_dense_block - 1:
+                features.append(
+                    TransitionBlock(num_convs_channels, num_convs_channels // 2) # 每个TransitionBlock把通道数减半
+                )
+                num_convs_channels = num_convs_channels // 2
+
+        self.features = nn.Sequential(*features)
+        self.avgpooling = nn.AvgPool2d(8,1)
+        self.classifier = nn.Sequential(
+            nn.Linear(num_convs_channels, out_class),
+            nn.Softmax(dim=1)
+        )
+
+    def forward(self, x):
+        x = self.avgpooling(self.features(x))
+        return self.classifier(x.view(x.size(0), -1))
+
+
+########################################
 # test defined modules
 
 if __name__ == "__main__":
@@ -511,6 +609,6 @@ if __name__ == "__main__":
     # use tool function in utils to test the structure of models
     import utils as cutils
 
-    net = ResNetPreA(3, 10, 101 )
-#    cutils.test_model_output(net.features, [32, 3, 32, 32])
-    print(net(torch.randn([32, 3, 32, 32])).size())
+    net = DenseNet(3, 10)
+    cutils.test_model_output(net.features, [3, 3, 32, 32])
+    print("{}".format(net(torch.randn([3, 3, 32, 32])).size() ) )
